@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from werkzeug.security import check_password_hash
-from flask_wtf import CSRFProtect
-from wtforms import Form, StringField, PasswordField
+from flask_wtf import CSRFProtect, FlaskForm
+from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired
 from db import get_db_connection
 
@@ -10,15 +10,15 @@ csrf = CSRFProtect()
 auth_bp = Blueprint('auth', __name__)
 
 
-class LoginForm(Form):
+class LoginForm(FlaskForm):
     username = StringField('username', validators=[InputRequired()])
     password = PasswordField('password', validators=[InputRequired()])
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm(request.form)
-    if request.method == 'POST' and form.validate():
+    form = LoginForm()
+    if form.validate_on_submit():
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
         cur.execute('SELECT * FROM Users WHERE username=%s', (form.username.data,))
