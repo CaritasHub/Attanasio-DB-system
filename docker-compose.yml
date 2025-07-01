@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: sudopassw
+      MYSQL_DATABASE: Attanasio
+      MYSQL_USER: Antonella
+      MYSQL_PASSWORD: attanasio
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./DockerConfig/DBScript.sql:/docker-entrypoint-initdb.d/1_DBScript.sql
+    ports:
+      - "3306:3306"
+      - "33061:33060"
+  web:
+    build: .
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: Attanasio
+      MYSQL_USER: Antonella
+      MYSQL_PASSWORD: attanasio
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+volumes:
+  db_data:
