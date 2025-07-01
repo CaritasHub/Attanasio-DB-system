@@ -22,6 +22,7 @@ services:
       MYSQL_DATABASE: Attanasio
       MYSQL_USER: Antonella
       MYSQL_PASSWORD: attanasio
+      MYSQL_ROOT_PASSWORD: sudopassw
     depends_on:
       - db
     ports:
