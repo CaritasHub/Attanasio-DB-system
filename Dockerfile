@@ -5,4 +5,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ /app
 COPY DockerConfig/DBScript.sql /app/DBScript.sql
 RUN chmod +x /app/entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run the entrypoint script through /bin/sh to avoid exec format issues
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
