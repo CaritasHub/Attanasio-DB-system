@@ -1,8 +1,6 @@
 # Attanasio-DB-system
 
-This project contains a MySQL schema and a small Flask application. The
-application exposes a couple of endpoints and connects to the MySQL database.
-Both services are orchestrated via Docker Compose.
+This project contains a MySQL schema and a Flask application. The application exposes REST endpoints for each table and requires authentication.
 
 ## Requirements
 
@@ -16,13 +14,16 @@ Build and start the environment:
 docker compose up --build
 ```
 
-The database will be initialized using `DockerConfig/DBScript.sql`. The
-Flask server will be available on [http://localhost:5000](http://localhost:5000).
+Open [http://localhost:5000](http://localhost:5000) and log in with **admin/admin123**.
 
-Useful endpoints:
+Useful endpoints (all require login):
 
-- `/health` – simple health check
-- `/specialists` – returns the list of specialists in the database
+- `/specialists` – gestione tabella Specialista
+- `/users` – gestione tabella Utente
+- `/afferenze` – gestione Afferenza
+- `/sedi` – gestione Sede
+- `/provvedimenti` – gestione Provvedimento
+- `/loginusers` – gestione utenti di login
 
 To stop the services:
 
