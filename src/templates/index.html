@@ -14,10 +14,56 @@
   </div>
   <div class="col-md-10 content-area">
     <input type="text" id="search-bar" class="form-control mb-3" placeholder="Cerca...">
+    <div class="mb-3">
+      <button id="add-row" class="btn btn-primary">Aggiungi</button>
+      <button id="import-csv-btn" class="btn btn-secondary">Import CSV</button>
+      <button id="export-excel" class="btn btn-success">Export Excel</button>
+      <button id="delete-selected" class="btn btn-danger" disabled>&#128465;</button>
+    </div>
     <table class="table table-striped" id="data-table">
       <thead></thead>
       <tbody></tbody>
     </table>
+  </div>
+</div>
+
+<!-- Add record modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="add-form">
+        <div class="modal-header">
+          <h5 class="modal-title">Aggiungi Record</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Import CSV modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="import-form">
+        <div class="modal-header">
+          <h5 class="modal-title">Importa CSV</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="file" id="csv-input" name="file" accept=".csv" class="form-control">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-primary">Carica</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

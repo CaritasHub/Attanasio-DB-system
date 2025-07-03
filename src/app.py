@@ -9,6 +9,7 @@ from modules.sede import sede_bp
 from modules.provvedimento import provvedimento_bp
 from modules.users_table import users_table_bp
 from modules.utils import login_required
+from modules.extras import extras_bp
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'change-this-secret'
@@ -24,6 +25,7 @@ app.register_blueprint(afferenza_bp)
 app.register_blueprint(sede_bp)
 app.register_blueprint(provvedimento_bp)
 app.register_blueprint(users_table_bp)
+app.register_blueprint(extras_bp)
 
 
 @app.route('/')
