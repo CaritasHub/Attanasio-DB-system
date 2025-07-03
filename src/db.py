@@ -18,6 +18,7 @@ def _ensure_users_table(conn):
     )
     conn.commit()
 
+
     cur.execute("SELECT COUNT(*) FROM Users")
     count = cur.fetchone()[0]
     if count == 0:

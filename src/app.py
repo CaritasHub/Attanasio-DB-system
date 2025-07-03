@@ -15,6 +15,7 @@ app.config['SECRET_KEY'] = 'change-this-secret'
 csrf.init_app(app)
 app.teardown_appcontext(close_db)
 
+
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(specialista_bp)
