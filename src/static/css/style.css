@@ -8,3 +8,13 @@ body {
 .table-actions {
     white-space: nowrap;
 }
+.sidebar {
+    position: fixed;
+    top: 4.5rem;
+    bottom: 0;
+    width: 200px;
+    overflow-y: auto;
+}
+.content-area {
+    margin-left: 210px;
+}

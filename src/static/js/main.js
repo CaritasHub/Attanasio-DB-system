@@ -8,45 +8,51 @@ $(function() {
         }
     });
 
-    function loadSpecialists() {
-        $.getJSON('/specialists/', function(data) {
-            var rows = data.map(function(item) {
-                return '<tr><td>' + item.id + '</td><td>' + item.nome + '</td><td>' + item.cognome +
-                       '</td><td>' + item.ruolo +
-                       '</td><td class="table-actions"><button class="btn btn-sm btn-danger delete-specialist" data-id="' + item.id + '">Delete</button></td></tr>';
-            }).join('');
-            $('#specialists-table tbody').html(rows);
+    var endpoints = {
+        specialists: '/specialists/',
+        users: '/users/',
+        afferenze: '/afferenze/',
+        sedi: '/sedi/',
+        provvedimenti: '/provvedimenti/',
+        loginusers: '/loginusers/'
+    };
+
+    function loadTable(name) {
+        $.getJSON(endpoints[name], function(data) {
+            var thead = '';
+            var tbody = '';
+            if (data.length > 0) {
+                var keys = Object.keys(data[0]);
+                thead = '<tr>' + keys.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                tbody = data.map(function(row){
+                    var tds = keys.map(function(k){
+                        var val = row[k];
+                        return '<td>' + (val === null ? '' : val) + '</td>';
+                    }).join('');
+                    return '<tr>' + tds + '</tr>';
+                }).join('');
+            }
+            $('#data-table thead').html(thead);
+            $('#data-table tbody').html(tbody);
+            $('#search-bar').trigger('keyup');
         });
     }
 
-    $('#add-specialist-form').submit(function(e) {
+    $('.table-link').on('click', function(e){
         e.preventDefault();
-        var data = {
-            nome: $('#specialist-nome').val(),
-            cognome: $('#specialist-cognome').val(),
-            ruolo: $('#specialist-ruolo').val()
-        };
-        $.ajax({
-            url: '/specialists/',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function() {
-                $('#addSpecialistModal').modal('hide');
-                loadSpecialists();
-                $('#add-specialist-form')[0].reset();
-            }
+        var name = $(this).data('table');
+        $('.table-link').removeClass('active');
+        $(this).addClass('active');
+        $('#search-bar').val('');
+        loadTable(name);
+    });
+
+    $('#search-bar').on('keyup', function(){
+        var value = $(this).val().toLowerCase();
+        $('#data-table tbody tr').filter(function(){
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
         });
     });
 
-    $('#specialists-table').on('click', '.delete-specialist', function() {
-        var id = $(this).data('id');
-        $.ajax({
-            url: '/specialists/' + id,
-            method: 'DELETE',
-            success: loadSpecialists
-        });
-    });
-
-    loadSpecialists();
+    loadTable('specialists');
 });
