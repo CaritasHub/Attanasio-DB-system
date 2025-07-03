@@ -97,17 +97,28 @@ $(function() {
         });
     });
 
-    $('#add-row').on('click', function(){
+    function showAddModal(cols){
         var form = $('#add-form');
         form.empty();
-        if (currentColumns.length === 0 && allColumns.length === 0) return;
-        var visibleCols = allColumns.length ? orderColumns(allColumns) : currentColumns;
-        visibleCols.forEach(function(c){
+        cols.forEach(function(c){
             if (hiddenColumns.indexOf(c) !== -1) return;
             form.append('<div class="mb-3"><label class="form-label">'+c+'</label><input class="form-control" name="'+c+'"></div>');
         });
-        var modal = new bootstrap.Modal(document.getElementById('addModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('addModal')).show();
+    }
+
+    $('#add-row').on('click', function(){
+        if (currentColumns.length === 0 && allColumns.length === 0) {
+            $.getJSON('/extras/columns/' + currentTable, function(cols){
+                if (!cols.length) return;
+                allColumns = cols;
+                currentColumns = orderColumns(cols);
+                showAddModal(currentColumns);
+            });
+            return;
+        }
+        var visibleCols = allColumns.length ? orderColumns(allColumns) : currentColumns;
+        showAddModal(visibleCols);
     });
 
     $('#add-form').on('submit', function(e){

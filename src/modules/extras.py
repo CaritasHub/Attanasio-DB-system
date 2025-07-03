@@ -79,3 +79,19 @@ def import_csv(name):
         return jsonify({'error': str(e)}), 400
     cur.close()
     return jsonify({'status': 'imported'})
+
+
+@extras_bp.route('/columns/<name>', methods=['GET'])
+@login_required
+def get_columns(name):
+    """Return the column names for a given table."""
+    table = TABLE_MAP.get(name)
+    if not table:
+        return jsonify({'error': 'unknown table'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(f"SHOW COLUMNS FROM {table}")
+    columns = [row[0] for row in cur.fetchall()]
+    cur.close()
+    return jsonify(columns)
