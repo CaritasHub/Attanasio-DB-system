@@ -12,7 +12,40 @@ def _ensure_users_table(conn):
         CREATE TABLE IF NOT EXISTS Users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) UNIQUE NOT NULL,
-            password_hash VARCHAR(255) NOT NULL
+            password_hash VARCHAR(255) NOT NULL,
+            email VARCHAR(255),
+            role ENUM('founder','editor','viewer') NOT NULL DEFAULT 'viewer'
+        )
+        """
+    )
+    conn.commit()
+
+    # ensure optional columns in case of upgrades
+    cur.execute("SHOW COLUMNS FROM Users LIKE 'email'")
+    if not cur.fetchone():
+        cur.execute("ALTER TABLE Users ADD COLUMN email VARCHAR(255)")
+    cur.execute("SHOW COLUMNS FROM Users LIKE 'role'")
+    if not cur.fetchone():
+        cur.execute("ALTER TABLE Users ADD COLUMN role ENUM('founder','editor','viewer') NOT NULL DEFAULT 'viewer'")
+        conn.commit()
+
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS AccessLog (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+            ip VARCHAR(45),
+            timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS EventLog (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+            event TEXT,
+            timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """
     )
@@ -23,8 +56,8 @@ def _ensure_users_table(conn):
     count = cur.fetchone()[0]
     if count == 0:
         cur.execute(
-            "INSERT INTO Users (username, password_hash) VALUES (%s, %s)",
-            ("admin", generate_password_hash("admin123")),
+            "INSERT INTO Users (username, password_hash, role) VALUES (%s, %s, %s)",
+            ("admin", generate_password_hash("admin123"), "founder"),
         )
         conn.commit()
     cur.close()

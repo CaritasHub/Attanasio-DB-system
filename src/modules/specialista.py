@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
-from .utils import login_required
+from .utils import login_required, role_required
 
 specialista_bp = Blueprint('specialista', __name__, url_prefix='/specialists')
 
@@ -29,6 +29,7 @@ def get_one(id):
 
 @specialista_bp.route('/', methods=['POST'])
 @login_required
+@role_required('editor', 'founder')
 def create():
     data = request.json
     conn = get_db_connection()
@@ -45,6 +46,7 @@ def create():
 
 @specialista_bp.route('/<int:id>', methods=['PUT'])
 @login_required
+@role_required('editor', 'founder')
 def update(id):
     data = request.json
     conn = get_db_connection()
@@ -60,6 +62,7 @@ def update(id):
 
 @specialista_bp.route('/<int:id>', methods=['DELETE'])
 @login_required
+@role_required('editor', 'founder')
 def delete(id):
     conn = get_db_connection()
     cur = conn.cursor()

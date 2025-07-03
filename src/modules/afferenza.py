@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
-from .utils import login_required
+from .utils import login_required, role_required
 
 afferenza_bp = Blueprint('afferenza', __name__, url_prefix='/afferenze')
 
@@ -18,6 +18,7 @@ def list_all():
 
 @afferenza_bp.route('/', methods=['POST'])
 @login_required
+@role_required('editor', 'founder')
 def create():
     data = request.json
     conn = get_db_connection()
@@ -38,6 +39,7 @@ def create():
 
 @afferenza_bp.route('/<int:utente_id>/<int:specialista_id>/<data_inizio>', methods=['DELETE'])
 @login_required
+@role_required('editor', 'founder')
 def delete(utente_id, specialista_id, data_inizio):
     conn = get_db_connection()
     cur = conn.cursor()
