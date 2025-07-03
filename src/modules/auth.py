@@ -4,6 +4,7 @@ from flask_wtf import CSRFProtect, FlaskForm
 from wtforms import StringField, PasswordField
 from wtforms.validators import InputRequired
 from db import get_db_connection
+from .utils import log_access, log_event
 
 csrf = CSRFProtect()
 
@@ -27,11 +28,17 @@ def login():
         if user and check_password_hash(user['password_hash'], form.password.data):
             session.clear()
             session['user_id'] = user['id']
+            session['role'] = user.get('role')
+            log_access(user['id'], request.remote_addr)
+            log_event(user['id'], 'login')
             return redirect(url_for('index'))
     return render_template('login.html', form=form)
 
 
 @auth_bp.route('/logout')
 def logout():
+    user_id = session.get('user_id')
+    if user_id:
+        log_event(user_id, 'logout')
     session.clear()
     return redirect(url_for('auth.login'))

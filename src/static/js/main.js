@@ -8,13 +8,14 @@ $(function() {
         }
     });
 
+    var userRole = window.userRole || 'viewer';
+
     var endpoints = {
         specialists: '/specialists/',
         users: '/users/',
         afferenze: '/afferenze/',
         sedi: '/sedi/',
-        provvedimenti: '/provvedimenti/',
-        loginusers: '/loginusers/'
+        provvedimenti: '/provvedimenti/'
     };
 
     var currentTable = 'specialists';
@@ -22,6 +23,12 @@ $(function() {
     var currentColumns = [];
     var hiddenColumns = ['id', 'created_at', 'updated_at'];
     var preferredOrder = ['nome', 'cognome', 'codice_fiscale'];
+
+    if (userRole === 'viewer') {
+        $('#add-row').hide();
+        $('#delete-selected').hide();
+        $('#import-csv-btn').hide();
+    }
 
     function orderColumns(cols) {
         var remaining = cols.slice();
@@ -49,16 +56,27 @@ $(function() {
             if (data.length > 0) {
                 allColumns = Object.keys(data[0]);
                 currentColumns = orderColumns(allColumns);
-                thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                    currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
-                tbody = data.map(function(row){
-                    var tds = currentColumns.map(function(k){
-                        var val = row[k];
-                        return '<td>' + (val === null ? '' : val) + '</td>';
+                if (userRole === 'viewer') {
+                    thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    tbody = data.map(function(row){
+                        var tds = currentColumns.map(function(k){
+                            var val = row[k];
+                            return '<td>' + (val === null ? '' : val) + '</td>';
+                        }).join('');
+                        return '<tr>' + tds + '</tr>';
                     }).join('');
-                    var dataAttrs = allColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
-                    return '<tr ' + dataAttrs + '><td><input type="checkbox" class="row-check"></td>' + tds + '</tr>';
-                }).join('');
+                } else {
+                    thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
+                        currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    tbody = data.map(function(row){
+                        var tds = currentColumns.map(function(k){
+                            var val = row[k];
+                            return '<td>' + (val === null ? '' : val) + '</td>';
+                        }).join('');
+                        var dataAttrs = allColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
+                        return '<tr ' + dataAttrs + '><td><input type="checkbox" class="row-check"></td>' + tds + '</tr>';
+                    }).join('');
+                }
                 $('#data-table thead').html(thead);
                 $('#data-table tbody').html(tbody);
                 $('#delete-selected').prop('disabled', true);
@@ -67,8 +85,12 @@ $(function() {
                 $.getJSON('/extras/columns/' + name, function(cols){
                     allColumns = cols;
                     currentColumns = orderColumns(cols);
-                    thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                        currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    if (userRole === 'viewer') {
+                        thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    } else {
+                        thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
+                            currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    }
                     $('#data-table thead').html(thead);
                     $('#data-table tbody').empty();
                     $('#delete-selected').prop('disabled', true);
@@ -78,32 +100,34 @@ $(function() {
         });
     }
 
-    $('#data-table').on('change', '.row-check, #select-all', function(){
-        if (this.id === 'select-all') {
-            $('.row-check').prop('checked', this.checked);
-        }
-        $('#delete-selected').prop('disabled', $('#data-table .row-check:checked').length === 0);
-    });
-
-    $('#delete-selected').on('click', function(){
-        var checks = $('#data-table .row-check:checked');
-        if (checks.length === 0) return;
-        var calls = [];
-        checks.each(function(){
-            var row = $(this).closest('tr');
-            var data = row.data();
-            var url = endpoints[currentTable];
-            if (currentTable === 'afferenze') {
-                url += data.utente_id + '/' + data.specialista_id + '/' + data.data_inizio;
-            } else {
-                url += data.id;
+    if (userRole !== 'viewer') {
+        $('#data-table').on('change', '.row-check, #select-all', function(){
+            if (this.id === 'select-all') {
+                $('.row-check').prop('checked', this.checked);
             }
-            calls.push($.ajax({url: url, method: 'DELETE'}));
+            $('#delete-selected').prop('disabled', $('#data-table .row-check:checked').length === 0);
         });
-        $.when.apply($, calls).then(function(){
-            loadTable(currentTable);
+
+        $('#delete-selected').on('click', function(){
+            var checks = $('#data-table .row-check:checked');
+            if (checks.length === 0) return;
+            var calls = [];
+            checks.each(function(){
+                var row = $(this).closest('tr');
+                var data = row.data();
+                var url = endpoints[currentTable];
+                if (currentTable === 'afferenze') {
+                    url += data.utente_id + '/' + data.specialista_id + '/' + data.data_inizio;
+                } else {
+                    url += data.id;
+                }
+                calls.push($.ajax({url: url, method: 'DELETE'}));
+            });
+            $.when.apply($, calls).then(function(){
+                loadTable(currentTable);
+            });
         });
-    });
+    }
 
     function showAddModal(cols){
         var form = $('#add-form .modal-body');
@@ -115,6 +139,7 @@ $(function() {
         new bootstrap.Modal(document.getElementById('addModal')).show();
     }
 
+    if (userRole !== 'viewer') {
     $('#add-row').on('click', function(){
         if (currentColumns.length === 0 && allColumns.length === 0) {
             $.getJSON('/extras/columns/' + currentTable, function(cols){
@@ -143,7 +168,6 @@ $(function() {
             loadTable(currentTable);
         });
     });
-
     $('#import-csv-btn').on('click', function(){
         $('#csv-input').val('');
         new bootstrap.Modal(document.getElementById('importModal')).show();
@@ -166,6 +190,7 @@ $(function() {
             loadTable(currentTable);
         });
     });
+    }
 
     $('#export-excel').on('click', function(){
         window.location = '/extras/export/' + currentTable;

@@ -12,7 +12,6 @@ TABLE_MAP = {
     'afferenze': 'Afferenza',
     'sedi': 'Sede',
     'provvedimenti': 'Provvedimento',
-    'loginusers': 'Users',
 }
 
 extras_bp = Blueprint('extras', __name__, url_prefix='/extras')
