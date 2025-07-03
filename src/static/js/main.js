@@ -18,7 +18,28 @@ $(function() {
     };
 
     var currentTable = 'specialists';
+    var allColumns = [];
     var currentColumns = [];
+    var hiddenColumns = ['id', 'created_at', 'updated_at'];
+    var preferredOrder = ['nome', 'cognome', 'codice_fiscale'];
+
+    function orderColumns(cols) {
+        var remaining = cols.slice();
+        var ordered = [];
+        preferredOrder.forEach(function (c) {
+            var idx = remaining.indexOf(c);
+            if (idx !== -1 && !hiddenColumns.includes(c)) {
+                ordered.push(c);
+                remaining.splice(idx, 1);
+            }
+        });
+        remaining.forEach(function (c) {
+            if (!hiddenColumns.includes(c)) {
+                ordered.push(c);
+            }
+        });
+        return ordered;
+    }
 
     function loadTable(name) {
         currentTable = name;
@@ -26,7 +47,8 @@ $(function() {
             var thead = '';
             var tbody = '';
             if (data.length > 0) {
-                currentColumns = Object.keys(data[0]);
+                allColumns = Object.keys(data[0]);
+                currentColumns = orderColumns(allColumns);
                 thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
                     currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
                 tbody = data.map(function(row){
@@ -34,9 +56,12 @@ $(function() {
                         var val = row[k];
                         return '<td>' + (val === null ? '' : val) + '</td>';
                     }).join('');
-                    var dataAttrs = currentColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
+                    var dataAttrs = allColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
                     return '<tr ' + dataAttrs + '><td><input type="checkbox" class="row-check"></td>' + tds + '</tr>';
                 }).join('');
+            } else {
+                allColumns = [];
+                currentColumns = [];
             }
             $('#data-table thead').html(thead);
             $('#data-table tbody').html(tbody);
@@ -55,6 +80,7 @@ $(function() {
     $('#delete-selected').on('click', function(){
         var checks = $('#data-table .row-check:checked');
         if (checks.length === 0) return;
+        var calls = [];
         checks.each(function(){
             var row = $(this).closest('tr');
             var data = row.data();
@@ -64,19 +90,24 @@ $(function() {
             } else {
                 url += data.id;
             }
-            $.ajax({url: url, method: 'DELETE'});
+            calls.push($.ajax({url: url, method: 'DELETE'}));
         });
-        loadTable(currentTable);
+        $.when.apply($, calls).then(function(){
+            loadTable(currentTable);
+        });
     });
 
     $('#add-row').on('click', function(){
         var form = $('#add-form');
         form.empty();
-        currentColumns.forEach(function(c){
-            if (c === 'id') return;
+        if (currentColumns.length === 0 && allColumns.length === 0) return;
+        var visibleCols = allColumns.length ? orderColumns(allColumns) : currentColumns;
+        visibleCols.forEach(function(c){
+            if (hiddenColumns.indexOf(c) !== -1) return;
             form.append('<div class="mb-3"><label class="form-label">'+c+'</label><input class="form-control" name="'+c+'"></div>');
         });
-        new bootstrap.Modal(document.getElementById('addModal')).show();
+        var modal = new bootstrap.Modal(document.getElementById('addModal'));
+        modal.show();
     });
 
     $('#add-form').on('submit', function(e){
