@@ -59,14 +59,22 @@ $(function() {
                     var dataAttrs = allColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
                     return '<tr ' + dataAttrs + '><td><input type="checkbox" class="row-check"></td>' + tds + '</tr>';
                 }).join('');
+                $('#data-table thead').html(thead);
+                $('#data-table tbody').html(tbody);
+                $('#delete-selected').prop('disabled', true);
+                $('#search-bar').trigger('keyup');
             } else {
-                allColumns = [];
-                currentColumns = [];
+                $.getJSON('/extras/columns/' + name, function(cols){
+                    allColumns = cols;
+                    currentColumns = orderColumns(cols);
+                    thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
+                        currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    $('#data-table thead').html(thead);
+                    $('#data-table tbody').empty();
+                    $('#delete-selected').prop('disabled', true);
+                    $('#search-bar').trigger('keyup');
+                });
             }
-            $('#data-table thead').html(thead);
-            $('#data-table tbody').html(tbody);
-            $('#delete-selected').prop('disabled', true);
-            $('#search-bar').trigger('keyup');
         });
     }
 
@@ -98,7 +106,7 @@ $(function() {
     });
 
     function showAddModal(cols){
-        var form = $('#add-form');
+        var form = $('#add-form .modal-body');
         form.empty();
         cols.forEach(function(c){
             if (hiddenColumns.indexOf(c) !== -1) return;

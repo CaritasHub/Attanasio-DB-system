@@ -28,15 +28,22 @@ def export_table(name):
     cur = conn.cursor(dictionary=True)
     cur.execute(f'SELECT * FROM {table}')
     rows = cur.fetchall()
+    headers = []
+    if rows:
+        headers = list(rows[0].keys())
+    else:
+        cur.close()
+        cur = conn.cursor()
+        cur.execute(f"SHOW COLUMNS FROM {table}")
+        headers = [row[0] for row in cur.fetchall()]
     cur.close()
 
     wb = Workbook()
     ws = wb.active
-    if rows:
-        headers = list(rows[0].keys())
+    if headers:
         ws.append(headers)
-        for r in rows:
-            ws.append([r[h] for h in headers])
+    for r in rows:
+        ws.append([r.get(h) for h in headers])
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
