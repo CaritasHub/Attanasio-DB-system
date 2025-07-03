@@ -59,14 +59,22 @@ $(function() {
                     var dataAttrs = allColumns.map(function(k){ return 'data-' + k + '="' + row[k] + '"'; }).join(' ');
                     return '<tr ' + dataAttrs + '><td><input type="checkbox" class="row-check"></td>' + tds + '</tr>';
                 }).join('');
+                $('#data-table thead').html(thead);
+                $('#data-table tbody').html(tbody);
+                $('#delete-selected').prop('disabled', true);
+                $('#search-bar').trigger('keyup');
             } else {
-                allColumns = [];
-                currentColumns = [];
+                $.getJSON('/extras/columns/' + name, function(cols){
+                    allColumns = cols;
+                    currentColumns = orderColumns(cols);
+                    thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
+                        currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    $('#data-table thead').html(thead);
+                    $('#data-table tbody').empty();
+                    $('#delete-selected').prop('disabled', true);
+                    $('#search-bar').trigger('keyup');
+                });
             }
-            $('#data-table thead').html(thead);
-            $('#data-table tbody').html(tbody);
-            $('#delete-selected').prop('disabled', true);
-            $('#search-bar').trigger('keyup');
         });
     }
 
@@ -97,17 +105,28 @@ $(function() {
         });
     });
 
-    $('#add-row').on('click', function(){
-        var form = $('#add-form');
+    function showAddModal(cols){
+        var form = $('#add-form .modal-body');
         form.empty();
-        if (currentColumns.length === 0 && allColumns.length === 0) return;
-        var visibleCols = allColumns.length ? orderColumns(allColumns) : currentColumns;
-        visibleCols.forEach(function(c){
+        cols.forEach(function(c){
             if (hiddenColumns.indexOf(c) !== -1) return;
             form.append('<div class="mb-3"><label class="form-label">'+c+'</label><input class="form-control" name="'+c+'"></div>');
         });
-        var modal = new bootstrap.Modal(document.getElementById('addModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('addModal')).show();
+    }
+
+    $('#add-row').on('click', function(){
+        if (currentColumns.length === 0 && allColumns.length === 0) {
+            $.getJSON('/extras/columns/' + currentTable, function(cols){
+                if (!cols.length) return;
+                allColumns = cols;
+                currentColumns = orderColumns(cols);
+                showAddModal(currentColumns);
+            });
+            return;
+        }
+        var visibleCols = allColumns.length ? orderColumns(allColumns) : currentColumns;
+        showAddModal(visibleCols);
     });
 
     $('#add-form').on('submit', function(e){
