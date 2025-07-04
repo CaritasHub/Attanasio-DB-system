@@ -236,6 +236,7 @@ $(function() {
                 visible: $(this).find('input').is(':checked'),
                 display_order: i
             });
+
         });
         $.ajax({
             url: '/extras/column-config/' + currentTable,
@@ -245,6 +246,7 @@ $(function() {
         }).done(function(){
             bootstrap.Modal.getInstance(document.getElementById('columnsModal')).hide();
             loadTable(currentTable);
+
         }).fail(function(){
             alert('Impossibile salvare la configurazione');
         });
