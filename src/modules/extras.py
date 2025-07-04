@@ -1,6 +1,6 @@
 from flask import Blueprint, request, send_file, jsonify
 from db import get_db_connection
-from .utils import login_required
+from .utils import login_required, role_required
 from openpyxl import Workbook
 import csv
 import io
@@ -101,3 +101,45 @@ def get_columns(name):
     columns = [row[0] for row in cur.fetchall()]
     cur.close()
     return jsonify(columns)
+
+
+@extras_bp.route('/column-config/<name>', methods=['GET'])
+@login_required
+def get_column_config(name):
+    table = TABLE_MAP.get(name)
+    if not table:
+        return jsonify({'error': 'unknown table'}), 400
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute('SELECT column_name, visible, display_order FROM ColumnConfig WHERE table_name=%s', (table,))
+    rows = cur.fetchall()
+    cur.close()
+    return jsonify({'columns': rows})
+
+
+@extras_bp.route('/column-config/<name>', methods=['POST'])
+@login_required
+@role_required('editor', 'founder')
+def set_column_config(name):
+    table = TABLE_MAP.get(name)
+    if not table:
+        return jsonify({'error': 'unknown table'}), 400
+    data = request.json or {}
+    columns = data.get('columns', [])
+    conn = get_db_connection()
+    cur = conn.cursor()
+    conn.start_transaction()
+    try:
+        cur.execute('DELETE FROM ColumnConfig WHERE table_name=%s', (table,))
+        for idx, col in enumerate(columns):
+            cur.execute(
+                'INSERT INTO ColumnConfig (table_name, column_name, visible, display_order) VALUES (%s,%s,%s,%s)',
+                (table, col.get('column_name'), bool(col.get('visible', True)), int(col.get('display_order', idx)))
+            )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        cur.close()
+        return jsonify({'error': str(e)}), 400
+    cur.close()
+    return jsonify({'status': 'saved'})

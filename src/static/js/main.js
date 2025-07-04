@@ -21,8 +21,12 @@ $(function() {
     var currentTable = 'specialists';
     var allColumns = [];
     var currentColumns = [];
+    var columnConfig = {};
     var hiddenColumns = ['id', 'created_at', 'updated_at'];
-    var preferredOrder = ['nome', 'cognome', 'codice_fiscale'];
+
+    function normalize(name){
+        return name.replace(/_/g, ' ');
+    }
 
     if (userRole === 'viewer') {
         $('#add-row').hide();
@@ -31,25 +35,26 @@ $(function() {
     }
 
     function orderColumns(cols) {
-        var remaining = cols.slice();
-        var ordered = [];
-        preferredOrder.forEach(function (c) {
-            var idx = remaining.indexOf(c);
-            if (idx !== -1 && !hiddenColumns.includes(c)) {
-                ordered.push(c);
-                remaining.splice(idx, 1);
-            }
+        return cols.slice().sort(function(a,b){
+            var oa = columnConfig[a] ? columnConfig[a].order : 0;
+            var ob = columnConfig[b] ? columnConfig[b].order : 0;
+            return oa - ob;
+        }).filter(function(c){
+            return !hiddenColumns.includes(c) && (!columnConfig[c] || columnConfig[c].visible);
         });
-        remaining.forEach(function (c) {
-            if (!hiddenColumns.includes(c)) {
-                ordered.push(c);
-            }
-        });
-        return ordered;
     }
 
     function loadTable(name) {
         currentTable = name;
+        $.getJSON('/extras/column-config/' + name, function(cfg){
+            columnConfig = {};
+            if(cfg.columns){
+                cfg.columns.forEach(function(c){ columnConfig[c.column_name] = {visible: c.visible, order: c.display_order}; });
+            }
+            fetchData();
+        });
+
+        function fetchData(){
         $.getJSON(endpoints[name], function(data) {
             var thead = '';
             var tbody = '';
@@ -57,7 +62,7 @@ $(function() {
                 allColumns = Object.keys(data[0]);
                 currentColumns = orderColumns(allColumns);
                 if (userRole === 'viewer') {
-                    thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                    thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
                     tbody = data.map(function(row){
                         var tds = currentColumns.map(function(k){
                             var val = row[k];
@@ -67,7 +72,7 @@ $(function() {
                     }).join('');
                 } else {
                     thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                        currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                        currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
                     tbody = data.map(function(row){
                         var tds = currentColumns.map(function(k){
                             var val = row[k];
@@ -86,10 +91,10 @@ $(function() {
                     allColumns = cols;
                     currentColumns = orderColumns(cols);
                     if (userRole === 'viewer') {
-                        thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                        thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
                     } else {
                         thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                            currentColumns.map(function(k){ return '<th>' + k + '</th>'; }).join('') + '</tr>';
+                            currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
                     }
                     $('#data-table thead').html(thead);
                     $('#data-table tbody').empty();
@@ -98,6 +103,7 @@ $(function() {
                 });
             }
         });
+        }
     }
 
     if (userRole !== 'viewer') {
@@ -134,7 +140,7 @@ $(function() {
         form.empty();
         cols.forEach(function(c){
             if (hiddenColumns.indexOf(c) !== -1) return;
-            form.append('<div class="mb-3"><label class="form-label">'+c+'</label><input class="form-control" name="'+c+'"></div>');
+            form.append('<div class="mb-3"><label class="form-label">'+normalize(c)+'</label><input class="form-control" name="'+c+'"></div>');
         });
         new bootstrap.Modal(document.getElementById('addModal')).show();
     }
@@ -194,6 +200,48 @@ $(function() {
 
     $('#export-excel').on('click', function(){
         window.location = '/extras/export/' + currentTable;
+    });
+
+    $('#table-settings').on('click', function(){
+        var list = $('#columns-list');
+        list.empty();
+        var cols = allColumns.length ? allColumns : [];
+        var load = function(c){
+            if(hiddenColumns.indexOf(c) !== -1) return;
+            var cfg = columnConfig[c] || {visible:true, order:0};
+            var item = $('<li class="list-group-item" data-col="'+c+'"></li>');
+            item.append('<input type="checkbox" class="form-check-input me-2" '+(cfg.visible?'checked':'')+'>');
+            item.append('<span>'+normalize(c)+'</span>');
+            list.append(item);
+        };
+        if(cols.length){
+            cols.forEach(load);
+            list.sortable();
+            new bootstrap.Modal(document.getElementById('columnsModal')).show();
+        } else {
+            $.getJSON('/extras/columns/' + currentTable, function(data){
+                allColumns = data;
+                data.forEach(load);
+                list.sortable();
+                new bootstrap.Modal(document.getElementById('columnsModal')).show();
+            });
+        }
+    });
+
+    $('#save-columns').on('click', function(){
+        var cols = [];
+        $('#columns-list li').each(function(i){
+            cols.push({column_name: $(this).data('col'), visible: $(this).find('input').is(':checked'), display_order: i});
+        });
+        $.ajax({
+            url: '/extras/column-config/' + currentTable,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({columns: cols})
+        }).done(function(){
+            bootstrap.Modal.getInstance(document.getElementById('columnsModal')).hide();
+            loadTable(currentTable);
+        });
     });
 
     $('.table-link').on('click', function(e){
