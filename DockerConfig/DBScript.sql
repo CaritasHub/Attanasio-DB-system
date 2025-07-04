@@ -143,6 +143,15 @@ CREATE TABLE EventLog (
   timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE ColumnConfig (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  table_name VARCHAR(255) NOT NULL,
+  column_name VARCHAR(255) NOT NULL,
+  visible BOOLEAN NOT NULL DEFAULT TRUE,
+  display_order INT DEFAULT 0,
+  UNIQUE KEY table_col (table_name, column_name)
+);
+
 -- Default admin user
 INSERT INTO Users (username, password_hash, role) VALUES ('admin', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'founder');
 
