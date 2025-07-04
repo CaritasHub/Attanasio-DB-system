@@ -231,7 +231,12 @@ $(function() {
     $('#save-columns').on('click', function(){
         var cols = [];
         $('#columns-list li').each(function(i){
-            cols.push({column_name: $(this).data('col'), visible: $(this).find('input').is(':checked'), display_order: i});
+            cols.push({
+                column_name: $(this).data('col'),
+                visible: $(this).find('input').is(':checked'),
+                display_order: i
+            });
+
         });
         $.ajax({
             url: '/extras/column-config/' + currentTable,
@@ -241,6 +246,10 @@ $(function() {
         }).done(function(){
             bootstrap.Modal.getInstance(document.getElementById('columnsModal')).hide();
             loadTable(currentTable);
+
+        }).fail(function(){
+            alert('Impossibile salvare la configurazione');
+
         });
     });
 
