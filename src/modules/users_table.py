@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
+from .query_builder import QueryBuilder
 from werkzeug.security import generate_password_hash
 
 users_table_bp = Blueprint('users_table', __name__, url_prefix='/loginusers')
+qb = QueryBuilder('Users')
 
 
 @users_table_bp.route('/', methods=['GET'])
@@ -25,15 +27,14 @@ def create():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO Users (username, password_hash, email, role) VALUES (%s, %s, %s, %s)',
-        (
-            data.get('username'),
-            generate_password_hash(data.get('password')),
-            data.get('email'),
-            data.get('role', 'viewer'),
-        ),
-    )
+    fields = {
+        'username': data.get('username'),
+        'password_hash': generate_password_hash(data.get('password')),
+        'email': data.get('email'),
+        'role': data.get('role', 'viewer'),
+    }
+    sql, values = qb.insert(fields)
+    cur.execute(sql, values)
     conn.commit()
     new_id = cur.lastrowid
     cur.close()
@@ -46,7 +47,7 @@ def create():
 def delete(id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM Users WHERE id=%s', (id,))
+    cur.execute(qb.delete(), (id,))
     conn.commit()
     cur.close()
     return jsonify({'status': 'deleted'})

@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
+from .query_builder import QueryBuilder
 
 afferenza_bp = Blueprint('afferenza', __name__, url_prefix='/afferenze')
+qb = QueryBuilder('Afferenza')
 
 
 @afferenza_bp.route('/', methods=['GET'])
@@ -10,7 +12,7 @@ afferenza_bp = Blueprint('afferenza', __name__, url_prefix='/afferenze')
 def list_all():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT * FROM Afferenza')
+    cur.execute(qb.select_all())
     result = cur.fetchall()
     cur.close()
     return jsonify(result)
@@ -23,15 +25,14 @@ def create():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO Afferenza (utente_id, specialista_id, ruolo, data_inizio) VALUES (%s, %s, %s, %s)',
-        (
-            data.get('utente_id'),
-            data.get('specialista_id'),
-            data.get('ruolo'),
-            data.get('data_inizio'),
-        ),
-    )
+    fields = {
+        'utente_id': data.get('utente_id'),
+        'specialista_id': data.get('specialista_id'),
+        'ruolo': data.get('ruolo'),
+        'data_inizio': data.get('data_inizio'),
+    }
+    sql, values = qb.insert(fields)
+    cur.execute(sql, values)
     conn.commit()
     cur.close()
     return jsonify({'status': 'created'}), 201
