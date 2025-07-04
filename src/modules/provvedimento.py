@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
+from .query_builder import QueryBuilder
 
 provvedimento_bp = Blueprint('provvedimento', __name__, url_prefix='/provvedimenti')
+qb = QueryBuilder('Provvedimento')
 
 
 @provvedimento_bp.route('/', methods=['GET'])
@@ -10,7 +12,7 @@ provvedimento_bp = Blueprint('provvedimento', __name__, url_prefix='/provvedimen
 def list_all():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT * FROM Provvedimento')
+    cur.execute(qb.select_all())
     result = cur.fetchall()
     cur.close()
     return jsonify(result)
@@ -23,16 +25,15 @@ def create():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO Provvedimento (utente_id, sede_id, tipo, data_inizio, data_fine) VALUES (%s, %s, %s, %s, %s)',
-        (
-            data.get('utente_id'),
-            data.get('sede_id'),
-            data.get('tipo'),
-            data.get('data_inizio'),
-            data.get('data_fine'),
-        ),
-    )
+    fields = {
+        'utente_id': data.get('utente_id'),
+        'sede_id': data.get('sede_id'),
+        'tipo': data.get('tipo'),
+        'data_inizio': data.get('data_inizio'),
+        'data_fine': data.get('data_fine'),
+    }
+    sql, values = qb.insert(fields)
+    cur.execute(sql, values)
     conn.commit()
     new_id = cur.lastrowid
     cur.close()
@@ -46,10 +47,8 @@ def update(id):
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'UPDATE Provvedimento SET stato=%s WHERE id=%s',
-        (data.get('stato'), id),
-    )
+    sql, values = qb.update(id, {'stato': data.get('stato')})
+    cur.execute(sql, values)
     conn.commit()
     cur.close()
     return jsonify({'status': 'updated'})
@@ -61,7 +60,7 @@ def update(id):
 def delete(id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM Provvedimento WHERE id=%s', (id,))
+    cur.execute(qb.delete(), (id,))
     conn.commit()
     cur.close()
     return jsonify({'status': 'deleted'})

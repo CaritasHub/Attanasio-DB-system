@@ -17,12 +17,15 @@
       <button id="add-row" class="btn btn-primary">Aggiungi</button>
       <button id="import-csv-btn" class="btn btn-secondary">Import CSV</button>
       <button id="export-excel" class="btn btn-success">Export Excel</button>
+      <button id="table-settings" class="btn btn-outline-secondary">&#9881;</button>
       <button id="delete-selected" class="btn btn-danger" disabled>&#128465;</button>
     </div>
-    <table class="table table-striped" id="data-table">
+    <div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered table-custom" id="data-table">
       <thead></thead>
       <tbody></tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -62,6 +65,25 @@
           <button type="submit" class="btn btn-primary">Carica</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Column settings modal -->
+<div class="modal fade" id="columnsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Colonne visibili</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="columns-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" class="btn btn-primary" id="save-columns">Salva</button>
+      </div>
     </div>
   </div>
 </div>

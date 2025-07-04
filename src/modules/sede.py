@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
+from .query_builder import QueryBuilder
 
 sede_bp = Blueprint('sede', __name__, url_prefix='/sedi')
+qb = QueryBuilder('Sede')
 
 
 @sede_bp.route('/', methods=['GET'])
@@ -10,7 +12,7 @@ sede_bp = Blueprint('sede', __name__, url_prefix='/sedi')
 def list_all():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT * FROM Sede')
+    cur.execute(qb.select_all())
     result = cur.fetchall()
     cur.close()
     return jsonify(result)
@@ -23,10 +25,8 @@ def create():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO Sede (nome, indirizzo) VALUES (%s, %s)',
-        (data.get('nome'), data.get('indirizzo')),
-    )
+    sql, values = qb.insert({'nome': data.get('nome'), 'indirizzo': data.get('indirizzo')})
+    cur.execute(sql, values)
     conn.commit()
     new_id = cur.lastrowid
     cur.close()
@@ -40,10 +40,8 @@ def update(id):
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'UPDATE Sede SET nome=%s, indirizzo=%s WHERE id=%s',
-        (data.get('nome'), data.get('indirizzo'), id),
-    )
+    sql, values = qb.update(id, {'nome': data.get('nome'), 'indirizzo': data.get('indirizzo')})
+    cur.execute(sql, values)
     conn.commit()
     cur.close()
     return jsonify({'status': 'updated'})
@@ -55,7 +53,7 @@ def update(id):
 def delete(id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM Sede WHERE id=%s', (id,))
+    cur.execute(qb.delete(), (id,))
     conn.commit()
     cur.close()
     return jsonify({'status': 'deleted'})
