@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
+from .query_builder import QueryBuilder
 
 specialista_bp = Blueprint('specialista', __name__, url_prefix='/specialists')
+qb = QueryBuilder('Specialista')
 
 
 @specialista_bp.route('/', methods=['GET'])
@@ -10,7 +12,7 @@ specialista_bp = Blueprint('specialista', __name__, url_prefix='/specialists')
 def list_all():
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT * FROM Specialista')
+    cur.execute(qb.select_all())
     result = cur.fetchall()
     cur.close()
     return jsonify(result)
@@ -21,7 +23,7 @@ def list_all():
 def get_one(id):
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT * FROM Specialista WHERE id=%s', (id,))
+    cur.execute(qb.select_one(), (id,))
     row = cur.fetchone()
     cur.close()
     return jsonify(row or {})
@@ -34,10 +36,10 @@ def create():
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO Specialista (nome, cognome, ruolo) VALUES (%s, %s, %s)',
-        (data.get('nome'), data.get('cognome'), data.get('ruolo')),
-    )
+    sql, values = qb.insert({'nome': data.get('nome'),
+                             'cognome': data.get('cognome'),
+                             'ruolo': data.get('ruolo')})
+    cur.execute(sql, values)
     conn.commit()
     new_id = cur.lastrowid
     cur.close()
@@ -51,10 +53,10 @@ def update(id):
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        'UPDATE Specialista SET nome=%s, cognome=%s, ruolo=%s WHERE id=%s',
-        (data.get('nome'), data.get('cognome'), data.get('ruolo'), id),
-    )
+    sql, values = qb.update(id, {'nome': data.get('nome'),
+                                 'cognome': data.get('cognome'),
+                                 'ruolo': data.get('ruolo')})
+    cur.execute(sql, values)
     conn.commit()
     cur.close()
     return jsonify({'status': 'updated'})
@@ -66,7 +68,7 @@ def update(id):
 def delete(id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM Specialista WHERE id=%s', (id,))
+    cur.execute(qb.delete(), (id,))
     conn.commit()
     cur.close()
     return jsonify({'status': 'deleted'})
