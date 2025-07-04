@@ -71,7 +71,8 @@ def _ensure_users_table(conn):
             "INSERT INTO Users (username, password_hash, role) VALUES (%s, %s, %s)",
             ("admin", generate_password_hash("admin123"), "founder"),
         )
-        conn.commit()
+    # Commit to close the transaction that may be opened by the SELECT above
+    conn.commit()
     cur.close()
 
 

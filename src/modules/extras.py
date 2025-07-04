@@ -111,13 +111,13 @@ def get_column_config(name):
         return jsonify({'error': 'unknown table'}), 400
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    
+
     cur.execute(
         'SELECT column_name, visible, display_order FROM ColumnConfig '
         'WHERE table_name=%s ORDER BY display_order',
         (table,)
     )
-    
+
     rows = cur.fetchall()
     cur.close()
     return jsonify({'columns': rows})

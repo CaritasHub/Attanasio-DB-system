@@ -249,7 +249,6 @@ $(function() {
 
         }).fail(function(){
             alert('Impossibile salvare la configurazione');
-
         });
     });
 
