@@ -10,12 +10,11 @@ $(function() {
 
     var userRole = window.userRole || 'viewer';
 
+    // Map visible table names to backend endpoints
     var endpoints = {
         specialists: '/specialists/',
         users: '/users/',
-        afferenze: '/afferenze/',
-        sedi: '/sedi/',
-        provvedimenti: '/provvedimenti/'
+        sedi: '/sedi/'
     };
 
     var currentTable = 'specialists';
@@ -121,17 +120,19 @@ $(function() {
             checks.each(function(){
                 var row = $(this).closest('tr');
                 var data = row.data();
-                var url = endpoints[currentTable];
-                if (currentTable === 'afferenze') {
-                    url += data.utente_id + '/' + data.specialista_id + '/' + data.data_inizio;
-                } else {
-                    url += data.id;
-                }
+                var url = endpoints[currentTable] + data.id;
                 calls.push($.ajax({url: url, method: 'DELETE'}));
             });
             $.when.apply($, calls).then(function(){
                 loadTable(currentTable);
             });
+        });
+
+        // Open detail page when clicking a row
+        $('#data-table').on('click', 'tbody tr', function(e){
+            if ($(e.target).is('input')) return;
+            var id = $(this).data('id');
+            if (id) window.location = '/record/' + currentTable + '/' + id;
         });
     }
 

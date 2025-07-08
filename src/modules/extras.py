@@ -1,3 +1,5 @@
+"""Utility endpoints for CSV import/export and column configuration."""
+
 from flask import Blueprint, request, send_file, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
@@ -6,12 +8,11 @@ import csv
 import io
 
 # Mapping from endpoint names to database table names
+# Map endpoint names used by the frontend to actual database tables
 TABLE_MAP = {
     'specialists': 'Specialista',
     'users': 'Utente',
-    'afferenze': 'Afferenza',
     'sedi': 'Sede',
-    'provvedimenti': 'Provvedimento',
 }
 
 extras_bp = Blueprint('extras', __name__, url_prefix='/extras')

@@ -1,3 +1,5 @@
+"""REST endpoints for the ``Specialista`` table."""
+
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
@@ -10,6 +12,7 @@ qb = QueryBuilder('Specialista')
 @specialista_bp.route('/', methods=['GET'])
 @login_required
 def list_all():
+    """Return all ``Specialista`` rows."""
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute(qb.select_all())
@@ -21,6 +24,7 @@ def list_all():
 @specialista_bp.route('/<int:id>', methods=['GET'])
 @login_required
 def get_one(id):
+    """Return a single record."""
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute(qb.select_one(), (id,))
@@ -33,6 +37,7 @@ def get_one(id):
 @login_required
 @role_required('editor', 'founder')
 def create():
+    """Insert a new record."""
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
@@ -50,6 +55,7 @@ def create():
 @login_required
 @role_required('editor', 'founder')
 def update(id):
+    """Update an existing record."""
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
@@ -66,6 +72,7 @@ def update(id):
 @login_required
 @role_required('editor', 'founder')
 def delete(id):
+    """Delete a record."""
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(qb.delete(), (id,))

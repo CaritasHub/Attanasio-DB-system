@@ -1,3 +1,5 @@
+"""REST endpoints for the ``Sede`` table."""
+
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from .utils import login_required, role_required
@@ -10,6 +12,7 @@ qb = QueryBuilder('Sede')
 @sede_bp.route('/', methods=['GET'])
 @login_required
 def list_all():
+    """Return all ``Sede`` rows."""
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
     cur.execute(qb.select_all())
@@ -22,6 +25,7 @@ def list_all():
 @login_required
 @role_required('editor', 'founder')
 def create():
+    """Create a new ``Sede`` record."""
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
@@ -37,6 +41,7 @@ def create():
 @login_required
 @role_required('editor', 'founder')
 def update(id):
+    """Update an existing record."""
     data = request.json
     conn = get_db_connection()
     cur = conn.cursor()
@@ -51,6 +56,7 @@ def update(id):
 @login_required
 @role_required('editor', 'founder')
 def delete(id):
+    """Delete a record."""
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(qb.delete(), (id,))
