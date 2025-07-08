@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import session, redirect, url_for, request
+from mysql.connector import errorcode, errors
 from werkzeug.security import generate_password_hash
 from db import get_db_connection
 import os
@@ -66,4 +67,38 @@ def send_email(to, subject, body):
             s.starttls()
             s.login(user, pwd)
         s.send_message(msg)
+
+
+def remove_fk_references(conn, table, record_id):
+    """Remove or nullify foreign key references to a record.
+
+    This function queries ``information_schema`` for all foreign keys
+    pointing to ``table`` and either deletes or nulls the referencing rows
+    depending on the constraint's ``DELETE_RULE``.
+    """
+    cur = conn.cursor(dictionary=True)
+    cur.execute(
+        """
+        SELECT k.TABLE_NAME, k.COLUMN_NAME, rc.DELETE_RULE
+        FROM information_schema.KEY_COLUMN_USAGE k
+        JOIN information_schema.REFERENTIAL_CONSTRAINTS rc
+          ON k.CONSTRAINT_NAME = rc.CONSTRAINT_NAME
+         AND k.TABLE_SCHEMA = rc.CONSTRAINT_SCHEMA
+         AND k.TABLE_NAME = rc.TABLE_NAME
+        WHERE k.REFERENCED_TABLE_SCHEMA = DATABASE()
+          AND k.REFERENCED_TABLE_NAME = %s
+        """,
+        (table,),
+    )
+    refs = cur.fetchall()
+    for ref in refs:
+        tbl = ref["TABLE_NAME"]
+        col = ref["COLUMN_NAME"]
+        rule = ref["DELETE_RULE"]
+        if rule == "SET NULL":
+            cur.execute(f"UPDATE {tbl} SET {col}=NULL WHERE {col}=%s", (record_id,))
+        else:
+            cur.execute(f"DELETE FROM {tbl} WHERE {col}=%s", (record_id,))
+    conn.commit()
+    cur.close()
 

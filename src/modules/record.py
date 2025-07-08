@@ -1,6 +1,7 @@
 """Record detail and edit views."""
 
 from flask import Blueprint, render_template, request, abort, session, redirect, url_for
+from mysql.connector import errors
 from db import get_db_connection
 from .utils import login_required
 from .query_builder import QueryBuilder
@@ -49,9 +50,15 @@ def record_view(name, rec_id):
                 continue
             data[k] = v if v != '' else None
         if data:
-            sql, values = qb.update(rec_id, data)
-            cur.execute(sql, values)
-            conn.commit()
+            try:
+                sql, values = qb.update(rec_id, data)
+                cur.execute(sql, values)
+                conn.commit()
+            except errors.Error as e:
+                conn.rollback()
+                session['error_message'] = str(e)
+                cur.close()
+                return redirect(url_for('record.record_view', name=name, rec_id=rec_id))
         return redirect(url_for('index', table=name))
 
     cur.execute(qb.select_one(), (rec_id,))
@@ -76,6 +83,7 @@ def record_view(name, rec_id):
                 opts.append({'id': r['id'], 'label': label})
             options[col] = opts
 
+    error = session.pop('error_message', None)
     cur.close()
     return render_template('record.html', row=row, name=name, editable=editable,
-                           options=options, date_fields=date_fields)
+                           options=options, date_fields=date_fields, error=error)
