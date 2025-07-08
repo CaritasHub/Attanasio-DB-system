@@ -10,19 +10,27 @@ $(function() {
 
     var userRole = window.userRole || 'viewer';
 
+    // Map visible table names to backend endpoints
     var endpoints = {
         specialists: '/specialists/',
         users: '/users/',
-        afferenze: '/afferenze/',
-        sedi: '/sedi/',
-        provvedimenti: '/provvedimenti/'
+        sedi: '/sedi/'
     };
 
     var currentTable = 'specialists';
+    var currentPage = 1;
+    var totalPages = 1;
+    var perPage = 50;
     var allColumns = [];
     var currentColumns = [];
     var columnConfig = {};
     var hiddenColumns = ['id', 'created_at', 'updated_at'];
+
+    function updatePageInfo(){
+        $('#page-info').text(currentPage + ' / ' + totalPages);
+        $('#prev-page').prop('disabled', currentPage <= 1);
+        $('#next-page').prop('disabled', currentPage >= totalPages);
+    }
 
     function normalize(name){
         return name.replace(/_/g, ' ');
@@ -55,7 +63,9 @@ $(function() {
         });
 
         function fetchData(){
-        $.getJSON(endpoints[name], function(data) {
+        $.getJSON(endpoints[name], {page: currentPage, per_page: perPage, query: $('#search-bar').val()}, function(res) {
+            var data = res.rows || res;
+            totalPages = Math.max(1, Math.ceil((res.total || data.length) / perPage));
             var thead = '';
             var tbody = '';
             if (data.length > 0) {
@@ -85,7 +95,7 @@ $(function() {
                 $('#data-table thead').html(thead);
                 $('#data-table tbody').html(tbody);
                 $('#delete-selected').prop('disabled', true);
-                $('#search-bar').trigger('keyup');
+                updatePageInfo();
             } else {
                 $.getJSON('/extras/columns/' + name, function(cols){
                     allColumns = cols;
@@ -99,11 +109,12 @@ $(function() {
                     $('#data-table thead').html(thead);
                     $('#data-table tbody').empty();
                     $('#delete-selected').prop('disabled', true);
-                    $('#search-bar').trigger('keyup');
+                    updatePageInfo();
                 });
             }
         });
         }
+        window.fetchData = fetchData;
     }
 
     if (userRole !== 'viewer') {
@@ -121,19 +132,22 @@ $(function() {
             checks.each(function(){
                 var row = $(this).closest('tr');
                 var data = row.data();
-                var url = endpoints[currentTable];
-                if (currentTable === 'afferenze') {
-                    url += data.utente_id + '/' + data.specialista_id + '/' + data.data_inizio;
-                } else {
-                    url += data.id;
-                }
+                var url = endpoints[currentTable] + data.id;
                 calls.push($.ajax({url: url, method: 'DELETE'}));
             });
             $.when.apply($, calls).then(function(){
                 loadTable(currentTable);
             });
         });
+
     }
+
+    // Open detail page for all roles
+    $('#data-table').on('click', 'tbody tr', function(e){
+        if ($(e.target).is('input')) return;
+        var id = $(this).data('id');
+        if (id) window.location = '/record/' + currentTable + '/' + id;
+    });
 
     function showAddModal(cols){
         var form = $('#add-form .modal-body');
@@ -258,14 +272,27 @@ $(function() {
         $('.table-link').removeClass('active');
         $(this).addClass('active');
         $('#search-bar').val('');
+        currentPage = 1;
         loadTable(name);
     });
 
-    $('#search-bar').on('keyup', function(){
-        var value = $(this).val().toLowerCase();
-        $('#data-table tbody tr').filter(function(){
-            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
+    $('#search-bar').on('input', function(){
+        currentPage = 1;
+        fetchData();
+    });
+
+    $('#prev-page').on('click', function(){
+        if(currentPage > 1){
+            currentPage--;
+            fetchData();
+        }
+    });
+
+    $('#next-page').on('click', function(){
+        if(currentPage < totalPages){
+            currentPage++;
+            fetchData();
+        }
     });
 
     loadTable('specialists');
