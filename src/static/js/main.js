@@ -21,7 +21,9 @@ $(function() {
     var currentTable = defaultTable;
     var currentPage = 1;
     var totalPages = 1;
-    var perPage = 50;
+    var perPage = parseInt($('#per-page-select').val(), 10) || 50;
+    var sortBy = 'id';
+    var sortOrder = 'asc';
     var allColumns = [];
     var currentColumns = [];
     var columnConfig = {};
@@ -55,6 +57,9 @@ $(function() {
 
     function loadTable(name) {
         currentTable = name;
+        sortBy = 'id';
+        sortOrder = 'asc';
+        currentPage = 1;
         $.getJSON('/extras/column-config/' + name, function(cfg){
             columnConfig = {};
             if(cfg.columns){
@@ -64,7 +69,7 @@ $(function() {
         });
 
         function fetchData(){
-        $.getJSON(endpoints[name], {page: currentPage, per_page: perPage, query: $('#search-bar').val()}, function(res) {
+        $.getJSON(endpoints[name], {page: currentPage, per_page: perPage, query: $('#search-bar').val(), sort_by: sortBy, order: sortOrder}, function(res) {
             var data = res.rows || res;
             totalPages = Math.max(1, Math.ceil((res.total || data.length) / perPage));
             var thead = '';
@@ -73,7 +78,11 @@ $(function() {
                 allColumns = Object.keys(data[0]);
                 currentColumns = orderColumns(allColumns);
                 if (userRole === 'viewer') {
-                    thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
+                    thead = '<tr>' + currentColumns.map(function(k){
+                        var arrow = '';
+                        if (sortBy === k) arrow = sortOrder === 'asc' ? ' \u25B2' : ' \u25BC';
+                        return '<th class="sortable" data-col="' + k + '">' + normalize(k) + arrow + '</th>';
+                    }).join('') + '</tr>';
                     tbody = data.map(function(row){
                         var tds = currentColumns.map(function(k){
                             var val = row[k];
@@ -83,7 +92,10 @@ $(function() {
                     }).join('');
                 } else {
                     thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                        currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
+                        currentColumns.map(function(k){
+                            var arrow = '';
+                            if (sortBy === k) arrow = sortOrder === 'asc' ? ' \u25B2' : ' \u25BC';
+                            return '<th class="sortable" data-col="' + k + '">' + normalize(k) + arrow + '</th>'; }).join('') + '</tr>';
                     tbody = data.map(function(row){
                         var tds = currentColumns.map(function(k){
                             var val = row[k];
@@ -102,10 +114,14 @@ $(function() {
                     allColumns = cols;
                     currentColumns = orderColumns(cols);
                     if (userRole === 'viewer') {
-                        thead = '<tr>' + currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
+                        thead = '<tr>' + currentColumns.map(function(k){
+                            return '<th class="sortable" data-col="' + k + '">' + normalize(k) + '</th>';
+                        }).join('') + '</tr>';
                     } else {
                         thead = '<tr><th><input type="checkbox" id="select-all"></th>' +
-                            currentColumns.map(function(k){ return '<th>' + normalize(k) + '</th>'; }).join('') + '</tr>';
+                            currentColumns.map(function(k){
+                                return '<th class="sortable" data-col="' + k + '">' + normalize(k) + '</th>';
+                            }).join('') + '</tr>';
                     }
                     $('#data-table thead').html(thead);
                     $('#data-table tbody').empty();
@@ -155,6 +171,17 @@ $(function() {
         if ($(e.target).is('input')) return;
         var id = $(this).data('id');
         if (id) window.location = '/record/' + currentTable + '/' + id;
+    });
+
+    $('#data-table').on('click', 'th.sortable', function(){
+        var col = $(this).data('col');
+        if (sortBy === col) {
+            sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortBy = col;
+            sortOrder = 'asc';
+        }
+        fetchData();
     });
 
     function showAddModal(cols){
@@ -303,6 +330,12 @@ $(function() {
             currentPage++;
             fetchData();
         }
+    });
+
+    $('#per-page-select').on('change', function(){
+        perPage = parseInt($(this).val(), 10) || 50;
+        currentPage = 1;
+        fetchData();
     });
 
     $('.table-link').removeClass('active');
