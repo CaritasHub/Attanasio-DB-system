@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Record{% endblock %}
 {% block content %}
+<div class="record-container">
 <h2>{{ name|capitalize }} {{ row.id }}</h2>
 <form method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -8,7 +9,18 @@
     {% if key != 'id' %}
     <div class="mb-3">
       <label class="form-label">{{ key.replace('_', ' ') }}</label>
-      <input class="form-control" name="{{ key }}" value="{{ value }}" {% if not editable %}readonly{% endif %}>
+      {% if key in options %}
+        <select class="form-select" name="{{ key }}" {% if not editable %}disabled{% endif %}>
+          <option value=""></option>
+          {% for opt in options[key] %}
+          <option value="{{ opt.id }}" {% if opt.id == value %}selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+      {% elif key in date_fields %}
+        <input type="date" class="form-control" name="{{ key }}" value="{{ value if value else '' }}" {% if not editable %}readonly{% endif %}>
+      {% else %}
+        <input class="form-control" name="{{ key }}" value="{{ value if value else '' }}" {% if not editable %}readonly{% endif %}>
+      {% endif %}
     </div>
     {% endif %}
   {% endfor %}
@@ -16,4 +28,5 @@
   <button type="submit" class="btn btn-primary">Salva</button>
   {% endif %}
 </form>
+</div>
 {% endblock %}

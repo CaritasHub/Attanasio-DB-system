@@ -147,6 +147,7 @@ CREATE TABLE ColumnConfig (
   id INT AUTO_INCREMENT PRIMARY KEY,
   table_name VARCHAR(255) NOT NULL,
   column_name VARCHAR(255) NOT NULL,
+  highlight BOOLEAN NOT NULL DEFAULT FALSE,
   visible BOOLEAN NOT NULL DEFAULT TRUE,
   display_order INT DEFAULT 0,
   UNIQUE KEY table_col (table_name, column_name)
