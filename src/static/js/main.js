@@ -57,7 +57,7 @@ $(function() {
         $.getJSON('/extras/column-config/' + name, function(cfg){
             columnConfig = {};
             if(cfg.columns){
-                cfg.columns.forEach(function(c){ columnConfig[c.column_name] = {visible: c.visible, order: c.display_order}; });
+                cfg.columns.forEach(function(c){ columnConfig[c.column_name] = {visible: c.visible, order: c.display_order, highlight: c.highlight}; });
             }
             fetchData();
         });
@@ -222,10 +222,11 @@ $(function() {
         var cols = allColumns.length ? allColumns : [];
         var load = function(c){
             if(hiddenColumns.indexOf(c) !== -1) return;
-            var cfg = columnConfig[c] || {visible:true, order:0};
-            var item = $('<li class="list-group-item" data-col="'+c+'"></li>');
-            item.append('<input type="checkbox" class="form-check-input me-2" '+(cfg.visible?'checked':'')+'>');
-            item.append('<span>'+normalize(c)+'</span>');
+            var cfg = columnConfig[c] || {visible:true, order:0, highlight:false};
+            var item = $('<li class="list-group-item d-flex align-items-center" data-col="'+c+'"></li>');
+            item.append('<input type="checkbox" class="form-check-input me-2 column-visible" '+(cfg.visible?'checked':'')+'>');
+            item.append('<span class="flex-grow-1">'+normalize(c)+'</span>');
+            item.append('<input type="checkbox" class="form-check-input highlight-check ms-2" '+(cfg.highlight?'checked':'')+' title="In rilievo">');
             list.append(item);
         };
         if(cols.length){
@@ -247,7 +248,8 @@ $(function() {
         $('#columns-list li').each(function(i){
             cols.push({
                 column_name: $(this).data('col'),
-                visible: $(this).find('input').is(':checked'),
+                visible: $(this).find('.column-visible').is(':checked'),
+                highlight: $(this).find('.highlight-check').is(':checked'),
                 display_order: i
             });
 

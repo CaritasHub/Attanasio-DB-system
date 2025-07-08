@@ -114,7 +114,7 @@ def get_column_config(name):
     cur = conn.cursor(dictionary=True)
 
     cur.execute(
-        'SELECT column_name, visible, display_order FROM ColumnConfig '
+        'SELECT column_name, visible, display_order, highlight FROM ColumnConfig '
         'WHERE table_name=%s ORDER BY display_order',
         (table,)
     )
@@ -140,8 +140,14 @@ def set_column_config(name):
         cur.execute('DELETE FROM ColumnConfig WHERE table_name=%s', (table,))
         for idx, col in enumerate(columns):
             cur.execute(
-                'INSERT INTO ColumnConfig (table_name, column_name, visible, display_order) VALUES (%s,%s,%s,%s)',
-                (table, col.get('column_name'), bool(col.get('visible', True)), int(col.get('display_order', idx)))
+                'INSERT INTO ColumnConfig (table_name, column_name, highlight, visible, display_order) VALUES (%s,%s,%s,%s,%s)',
+                (
+                    table,
+                    col.get('column_name'),
+                    bool(col.get('highlight', False)),
+                    bool(col.get('visible', True)),
+                    int(col.get('display_order', idx)),
+                )
             )
         conn.commit()
     except Exception as e:

@@ -8,6 +8,15 @@ body {
 .table-actions {
     white-space: nowrap;
 }
+
+/* minimal style for record page */
+.record-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 4px;
+}
 .sidebar {
     position: fixed;
     top: 4.5rem;
