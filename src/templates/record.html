@@ -3,6 +3,9 @@
 {% block content %}
 <div class="record-container">
 <h2>Modifica {{ name|capitalize }}</h2>
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
 <form method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% set readonly_fields = ['created_at', 'updated_at'] %}

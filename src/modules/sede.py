@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify
 from mysql.connector import errors, errorcode
 from db import get_db_connection
-from .utils import login_required, role_required
+from .utils import login_required, role_required, remove_fk_references
 from .query_builder import QueryBuilder
 import csv
 import io
@@ -120,8 +120,8 @@ def delete(id):
             if not force:
                 cur.close()
                 return jsonify({'error': 'foreign_key'}), 409
-            cur.execute('DELETE FROM Provvedimento WHERE sede_id=%s', (id,))
-            conn.commit()
+            # remove references generically and retry
+            remove_fk_references(conn, 'Sede', id)
             cur.execute(qb.delete(), (id,))
             conn.commit()
         else:
