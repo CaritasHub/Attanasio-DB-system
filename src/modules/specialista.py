@@ -1,6 +1,7 @@
 """REST API for the ``Specialista`` table."""
 
 from flask import Blueprint, request, jsonify
+from mysql.connector import errors, errorcode
 from db import get_db_connection
 from .utils import login_required, role_required
 from .query_builder import QueryBuilder
@@ -120,9 +121,26 @@ def update(id):
 def delete(id):
     """Delete a record."""
     # Remove one entry by id
+    force = request.args.get('force') == '1'
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(qb.delete(), (id,))
-    conn.commit()
+    try:
+        cur.execute(qb.delete(), (id,))
+        conn.commit()
+    except errors.IntegrityError as e:
+        if e.errno == errorcode.ER_ROW_IS_REFERENCED_2:
+            if not force:
+                cur.close()
+                return jsonify({'error': 'foreign_key'}), 409
+            # remove references and retry
+            cur.execute('UPDATE Utente SET operatore_id=NULL WHERE operatore_id=%s', (id,))
+            cur.execute('UPDATE Utente SET consenso_operatore_id=NULL WHERE consenso_operatore_id=%s', (id,))
+            cur.execute('DELETE FROM Afferenza WHERE specialista_id=%s', (id,))
+            conn.commit()
+            cur.execute(qb.delete(), (id,))
+            conn.commit()
+        else:
+            cur.close()
+            return jsonify({'error': str(e)}), 400
     cur.close()
     return jsonify({'status': 'deleted'})

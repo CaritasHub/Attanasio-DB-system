@@ -1,6 +1,6 @@
 """Record detail and edit views."""
 
-from flask import Blueprint, render_template, request, abort, session
+from flask import Blueprint, render_template, request, abort, session, redirect, url_for
 from db import get_db_connection
 from .utils import login_required
 from .query_builder import QueryBuilder
@@ -41,15 +41,18 @@ def record_view(name, rec_id):
 
     # Update record when allowed
     editable = session.get('role') in ('editor', 'founder')
+    readonly_fields = {'created_at', 'updated_at'}
     if request.method == 'POST' and editable:
         data = {}
         for k, v in request.form.items():
-            if k == 'csrf_token':
+            if k == 'csrf_token' or k in readonly_fields:
                 continue
             data[k] = v if v != '' else None
-        sql, values = qb.update(rec_id, data)
-        cur.execute(sql, values)
-        conn.commit()
+        if data:
+            sql, values = qb.update(rec_id, data)
+            cur.execute(sql, values)
+            conn.commit()
+        return redirect(url_for('index', table=name))
 
     cur.execute(qb.select_one(), (rec_id,))
     row = cur.fetchone()

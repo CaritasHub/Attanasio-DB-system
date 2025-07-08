@@ -1,6 +1,7 @@
 """REST API for the ``Utente`` table."""
 
 from flask import Blueprint, request, jsonify
+from mysql.connector import errors, errorcode
 from db import get_db_connection
 from .utils import login_required, role_required
 from .query_builder import QueryBuilder
@@ -128,7 +129,14 @@ def delete(id):
     # Called by the frontend when a row is removed
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(qb.delete(), (id,))
-    conn.commit()
+    try:
+        cur.execute(qb.delete(), (id,))
+        conn.commit()
+    except errors.IntegrityError as e:
+        if e.errno == errorcode.ER_ROW_IS_REFERENCED_2:
+            cur.close()
+            return jsonify({'error': 'foreign_key'}), 409
+        cur.close()
+        return jsonify({'error': str(e)}), 400
     cur.close()
     return jsonify({'status': 'deleted'})

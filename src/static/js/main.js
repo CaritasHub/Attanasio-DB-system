@@ -17,7 +17,8 @@ $(function() {
         sedi: '/sedi/'
     };
 
-    var currentTable = 'specialists';
+    var defaultTable = new URLSearchParams(window.location.search).get('table') || 'users';
+    var currentTable = defaultTable;
     var currentPage = 1;
     var totalPages = 1;
     var perPage = 50;
@@ -128,16 +129,23 @@ $(function() {
         $('#delete-selected').on('click', function(){
             var checks = $('#data-table .row-check:checked');
             if (checks.length === 0) return;
-            var calls = [];
+            function deleteRow(row, force){
+                var data = row.data();
+                var url = endpoints[currentTable] + data.id + (force ? '?force=1' : '');
+                return $.ajax({url:url, method:'DELETE'}).fail(function(xhr){
+                    if(!force && xhr.status === 409){
+                        if(confirm('Record collegato ad altre tabelle. Eliminare comunque?')){
+                            return deleteRow(row, true);
+                        }
+                    }
+                });
+            }
+            var chain = $.Deferred().resolve();
             checks.each(function(){
                 var row = $(this).closest('tr');
-                var data = row.data();
-                var url = endpoints[currentTable] + data.id;
-                calls.push($.ajax({url: url, method: 'DELETE'}));
+                chain = chain.then(function(){ return deleteRow(row, false); });
             });
-            $.when.apply($, calls).then(function(){
-                loadTable(currentTable);
-            });
+            chain.then(function(){ loadTable(currentTable); });
         });
 
     }
@@ -297,5 +305,7 @@ $(function() {
         }
     });
 
-    loadTable('specialists');
+    $('.table-link').removeClass('active');
+    $(".table-link[data-table='" + defaultTable + "']").addClass('active');
+    loadTable(defaultTable);
 });
