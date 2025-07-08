@@ -2,9 +2,10 @@
 {% block title %}Record{% endblock %}
 {% block content %}
 <div class="record-container">
-<h2>{{ name|capitalize }} {{ row.id }}</h2>
+<h2>Modifica {{ name|capitalize }}</h2>
 <form method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set readonly_fields = ['created_at', 'updated_at'] %}
   {% for key, value in row.items() %}
     {% if key != 'id' %}
     <div class="mb-3">
@@ -17,9 +18,13 @@
           {% endfor %}
         </select>
       {% elif key in date_fields %}
-        <input type="date" class="form-control" name="{{ key }}" value="{{ value if value else '' }}" {% if not editable %}readonly{% endif %}>
+        <input type="date" class="form-control" name="{{ key }}" value="{{ value if value else '' }}" {% if not editable or key in readonly_fields %}readonly{% endif %} {% if key in readonly_fields %}disabled{% endif %}>
       {% else %}
+        {% if key in readonly_fields %}
+        <input class="form-control" value="{{ value if value else '' }}" disabled>
+        {% else %}
         <input class="form-control" name="{{ key }}" value="{{ value if value else '' }}" {% if not editable %}readonly{% endif %}>
+        {% endif %}
       {% endif %}
     </div>
     {% endif %}
