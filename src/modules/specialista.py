@@ -20,7 +20,7 @@ def list_or_search():
     query = request.args.get('query')
     page = request.args.get('page', default=1, type=int)
     per_page = request.args.get('per_page', default=50, type=int)
-    sort_by = request.args.get('sort_by', default='id')
+    sort_by = request.args.get('sort_by')
     order = request.args.get('order', default='asc').lower()
 
     conn = get_db_connection()
@@ -42,18 +42,21 @@ def list_or_search():
         clauses = ' WHERE ' + ' OR '.join(like_parts)
         values.extend(['%' + query + '%'] * len(cols))
 
-    # Validate sorting column
-    cur.execute('SHOW COLUMNS FROM Specialista')
-    valid_cols = [r[0] for r in cur.fetchall()]
-    if sort_by not in valid_cols:
-        sort_by = 'id'
     order_sql = 'DESC' if order == 'desc' else 'ASC'
+    if sort_by:
+        cur.execute('SHOW COLUMNS FROM Specialista')
+        valid_cols = [r[0] for r in cur.fetchall()]
+        if sort_by not in valid_cols:
+            sort_by = None
 
     count_sql = f'SELECT COUNT(*) FROM Specialista{clauses}'
     cur.execute(count_sql, values)
     total = cur.fetchone()['COUNT(*)']
 
-    base_sql += f"{clauses} ORDER BY {sort_by} {order_sql} LIMIT %s OFFSET %s"
+    if sort_by:
+        base_sql += f"{clauses} ORDER BY {sort_by} {order_sql} LIMIT %s OFFSET %s"
+    else:
+        base_sql += f"{clauses} LIMIT %s OFFSET %s"
     values.extend([per_page, (page-1) * per_page])
     cur.execute(base_sql, values)
     rows = cur.fetchall()

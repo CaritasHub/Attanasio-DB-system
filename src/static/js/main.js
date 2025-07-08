@@ -22,7 +22,7 @@ $(function() {
     var currentPage = 1;
     var totalPages = 1;
     var perPage = parseInt($('#per-page-select').val(), 10) || 50;
-    var sortBy = 'id';
+    var sortBy = null;
     var sortOrder = 'asc';
     var allColumns = [];
     var currentColumns = [];
@@ -57,7 +57,7 @@ $(function() {
 
     function loadTable(name) {
         currentTable = name;
-        sortBy = 'id';
+        sortBy = null;
         sortOrder = 'asc';
         currentPage = 1;
         $.getJSON('/extras/column-config/' + name, function(cfg){
@@ -69,7 +69,9 @@ $(function() {
         });
 
         function fetchData(){
-        $.getJSON(endpoints[name], {page: currentPage, per_page: perPage, query: $('#search-bar').val(), sort_by: sortBy, order: sortOrder}, function(res) {
+        var params = {page: currentPage, per_page: perPage, query: $('#search-bar').val()};
+        if(sortBy){ params.sort_by = sortBy; params.order = sortOrder; }
+        $.getJSON(endpoints[name], params, function(res) {
             var data = res.rows || res;
             totalPages = Math.max(1, Math.ceil((res.total || data.length) / perPage));
             var thead = '';
