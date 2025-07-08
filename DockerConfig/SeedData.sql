@@ -266,38 +266,6 @@ INSERT INTO Provvedimento (utente_id, sede_id, tipo, data_inizio, data_fine, ore
 (49, 49, 'LPU', '2024-03-22 09:00:00', '2024-04-22 17:00:00', NULL, NULL, 'POL049', 'Attivo', NULL),
 (50, 50, 'Messa alla prova', '2024-03-23 09:00:00', '2024-04-23 17:00:00', NULL, NULL, 'POL050', 'Attivo', NULL);
 
--- Insert additional login users
-INSERT INTO Users (username, password_hash, role) VALUES
-('user1', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'viewer'),
-('user2', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'viewer'),
-('user3', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'viewer'),
-('user4', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'viewer'),
-('user5', 'scrypt:32768:8:1$NlPZbR5e1kOfJbDC$6540ed8260096c5640a9101e65ecd71639c7d2e83c9ac4059f250e7001a24253074ffdac0ded2c3a805ee07664b771a5016259f84194ddcf825fa9d70c6c2da8', 'viewer');
 
--- Populate AccessLog
-INSERT INTO AccessLog (user_id, ip) VALUES
-(3, '127.0.0.1'),
-(4, '127.0.0.2'),
-(5, '127.0.0.3'),
-(6, '127.0.0.4'),
-(2, '127.0.0.5'),
-(3, '127.0.0.6'),
-(4, '127.0.0.7'),
-(5, '127.0.0.8'),
-(6, '127.0.0.9'),
-(2, '127.0.0.10');
 
--- Populate EventLog
-INSERT INTO EventLog (user_id, event) VALUES
-(3, 'event 1'),
-(4, 'event 2'),
-(5, 'event 3'),
-(6, 'event 4'),
-(2, 'event 5');
-
--- Populate ColumnConfig
-INSERT INTO ColumnConfig (table_name, column_name, visible, display_order) VALUES
-('Utente','note',0,1),
-('Specialista','telefono',1,2),
-('Sede','email',1,3);
 
