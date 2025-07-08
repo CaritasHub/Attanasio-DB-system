@@ -132,7 +132,7 @@ $(function() {
             function deleteRow(row, force){
                 var data = row.data();
                 var url = endpoints[currentTable] + data.id + (force ? '?force=1' : '');
-                return $.ajax({url:url, method:'DELETE'}).fail(function(xhr){
+                return $.ajax({url:url, method:'DELETE'}).then(null, function(xhr){
                     if(!force && xhr.status === 409){
                         if(confirm('Record collegato ad altre tabelle. Eliminare comunque?')){
                             return deleteRow(row, true);
