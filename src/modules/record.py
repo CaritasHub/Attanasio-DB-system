@@ -37,7 +37,7 @@ def record_view(name, rec_id):
     # Get column types for date detection
     cur.execute(f"SHOW COLUMNS FROM {table}")
     cols_info = {row['Field']: row['Type'] for row in cur.fetchall()}
-    date_fields = [k for k, t in cols_info.items() if 'date' in t.lower()]
+    date_fields = [k for k, t in cols_info.items() if 'date' in str(t).lower()]
 
     # Update record when allowed
     editable = session.get('role') in ('editor', 'founder')
